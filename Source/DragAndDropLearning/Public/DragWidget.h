@@ -7,6 +7,7 @@
 #include "DragWidget.generated.h"
 
 class UUserWidget;
+class UDragWidget;
 
 UCLASS()
 class DRAGANDDROPLEARNING_API UDragWidget : public UDragDropOperation

@@ -3,3 +3,61 @@
 
 #include "MyWindow.h"
 
+#include "DragWidget.h"
+
+FReply UMyWindow::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+	
+	return CustomDetectDrag(InMouseEvent, this, EKeys::LeftMouseButton);
+}
+
+void UMyWindow::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
+	UDragDropOperation*& OutOperation)
+{
+	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
+	
+	UDragWidget* DragDropOperation = NewObject<UDragWidget>();
+	this->SetVisibility(ESlateVisibility::HitTestInvisible);
+	
+	DragDropOperation->WidgetReference = this;
+	DragDropOperation->DragOffset = InGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
+	
+	DragDropOperation->DefaultDragVisual = this;
+	DragDropOperation->Pivot = EDragPivot::MouseDown;
+	
+	OutOperation = DragDropOperation;
+}
+
+void UMyWindow::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+{
+	Super::NativeOnDragLeave(InDragDropEvent, InOperation);
+	
+	RemoveFromParent();
+}
+
+FReply UMyWindow::CustomDetectDrag(const FPointerEvent& InMouseEvent, UWidget* WidgetDetectingDrag, FKey DragKey)
+{
+	if ( InMouseEvent.GetEffectingButton() == DragKey /*|| PointerEvent.IsTouchEvent()*/ )
+	{
+		FEventReply Reply;
+		Reply.NativeReply = FReply::Handled();
+		
+		if ( WidgetDetectingDrag )
+		{
+			TSharedPtr<SWidget> SlateWidgetDetectingDrag = WidgetDetectingDrag->GetCachedWidget();
+			if ( SlateWidgetDetectingDrag.IsValid() )
+			{
+				Reply.NativeReply = Reply.NativeReply.DetectDrag(SlateWidgetDetectingDrag.ToSharedRef(), DragKey);
+				return Reply.NativeReply;
+			}
+		}
+	}
+
+	return FReply::Unhandled();
+}
+
+void UMyWindow::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+}
